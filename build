@@ -1,0 +1,5 @@
+#!/bin/sh
+
+CWD="$(dirname $0)"
+(cat "$CWD/src/shell-wrapper"; cat "$CWD/src/brew-compose.rb" | sed 's/^/#/' ) > "$CWD/brew-compose"
+chmod +x "$CWD/brew-compose"
