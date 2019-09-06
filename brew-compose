@@ -1,39 +1,46 @@
 #!/usr/bin/env bash
 
-brew_compose_config="$HOME/.brew-compose"
+brew_compose_file="$HOME/.brew-compose.yml"
 brew_compose_verbose=false
 
 function bc-main() {
   local commands=()
+  local key
 
-  for i in "$@"; do
-    case $i in
-      -c=*|--conf=*)
-        brew_compose_config="${i#*=}"
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+      -f|--file)
+        brew_compose_file="$2"
+        shift
+        shift
       ;;
       -v|--verbose)
         brew_compose_verbose=true
+        shift
       ;;
       -h|--help)
         bc-help
         return
       ;;
       -*)
-        # unknown option
+        echo "Unknown option: $key"
+        return
       ;;
       *)
-        commands+=("$i")
+        commands+=("$key")
+        shift
       ;;
     esac
   done
 
   if [ "$brew_compose_verbose" = true ]; then
-    echo "v:CONFIG   = ${brew_compose_config}"
-    echo "v:COMMANDS = ${commands[@]}"
+    echo "v:COMPOSE_FILE = ${brew_compose_file}"
+    echo "v:COMMANDS     = ${commands[@]}"
   fi
 
-  if [ ! -f "${brew_compose_config}" ]; then
-    echo "${brew_compose_config} does not exist"
+  if [ ! -f "${brew_compose_file}" ]; then
+    echo "Compose file ${brew_compose_file} does not exist"
     return 1
   fi
 
@@ -54,21 +61,27 @@ function bc-main() {
 }
 
 function bc-help() {
-  echo "Usage: brew-compose [-c=..|-v|-h] [list|install]"
-  echo "  -c, --conf=[path]: specifies config file path, default is ~/.brew-compose"
-  echo "  -v, --verbose:     prints verbose debugging information"
-  echo "  -h, --help:        prints this help"
-  echo "Commands:            "
-  echo "  list:              list all brew formulaes in config"
-  echo "  install:           install formulaes according to config"
+cat >&2 <<EOF
+Usage: brew-compose [-f <arg>...] [options] [COMMAND]
+
+Options:
+  -f, --file FILE   specify an alternate compose file
+                    (default: ~/.brew-compose.yml)
+  -v, --verbose     print verbose debugging information
+  -h, --help        print this help
+
+Commands
+  list              list all brew formulaes in compose file
+  install           install formulaes according to compose file
+EOF
 }
 
 function bc-list() {
-  cat $brew_compose_config
+  cat $brew_compose_file
 }
 
 function bc-install() {
-  brew install $(cat $brew_compose_config)
+  brew install $(cat $brew_compose_file)
 }
 
 bc-main "$@"
