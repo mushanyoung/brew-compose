@@ -1,87 +1,39 @@
-#!/usr/bin/env bash
+#!/usr/bin/env ruby
 
-brew_compose_file="$HOME/.brew-compose.yml"
-brew_compose_verbose=false
+require 'optparse'
+require 'yaml'
 
-function bc-main() {
-  local commands=()
-  local key
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: brew-compose [-f <arg>...] [options] [COMMAND]
 
-  while [[ $# -gt 0 ]]; do
-    key="$1"
-    case $key in
-      -f|--file)
-        brew_compose_file="$2"
-        shift
-        shift
-      ;;
-      -v|--verbose)
-        brew_compose_verbose=true
-        shift
-      ;;
-      -h|--help)
-        bc-help
-        return
-      ;;
-      -*)
-        echo "Unknown option: $key"
-        return
-      ;;
-      *)
-        commands+=("$key")
-        shift
-      ;;
-    esac
-  done
-
-  if [ "$brew_compose_verbose" = true ]; then
-    echo "v:COMPOSE_FILE = ${brew_compose_file}"
-    echo "v:COMMANDS     = ${commands[@]}"
-  fi
-
-  if [ ! -f "${brew_compose_file}" ]; then
-    echo "Compose file ${brew_compose_file} does not exist"
-    return 1
-  fi
-
-  cmd="${commands[0]}"
-  commands=("${commands[@]:1}")
-  case $cmd in
-    list|lis|li|l)
-      bc-list "${commands[@]}"
-    ;;
-    install|instal|insta|inst|ins|in|i)
-      bc-install "${commands[@]}"
-    ;;
-    *)
-    echo "${cmd} is not a valid command."
-    return 127
-    ;;
-  esac
-}
-
-function bc-help() {
-cat >&2 <<EOF
-Usage: brew-compose [-f <arg>...] [options] [COMMAND]
+Commands:
+    list                             list all brew formulae in compose file
+    install                          install formulaes according to compose file
 
 Options:
-  -f, --file FILE   specify an alternate compose file
-                    (default: ~/.brew-compose.yml)
-  -v, --verbose     print verbose debugging information
-  -h, --help        print this help
+    -h, --help                       print this help"
 
-Commands
-  list              list all brew formulaes in compose file
-  install           install formulaes according to compose file
-EOF
-}
+  opts.on("-f", "--file FILE", "specify an alternate compose file (default: ~/.brew-compose.yml)") do |v|
+    options[:file] = v
+  end
+  opts.on("-v", "--verbose", "print verbose debugging information") do |v|
+    options[:verbose] = v
+  end
+end.parse!
 
-function bc-list() {
-  cat $brew_compose_file
-}
+verbose = options[:verbose] || false
+file    = options[:file] || "~/.brew-compose.yml"
+commands = ARGV
 
-function bc-install() {
-  brew install $(cat $brew_compose_file)
-}
+p file
+p verbose
+p commands
 
-bc-main "$@"
+if commands[0] == "list"
+  output = YAML.load(File.read(File.expand_path(file)))
+  p output['formulae'].keys.join(' ')
+elsif commands[0] == "install"
+  output = YAML.load(File.read(File.expand_path(file)))
+  p %x[ brew install #{output['formulae'].keys.join(' ')} ]
+end
