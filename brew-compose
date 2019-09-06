@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+
+brew_compose_config="$HOME/.brew-compose"
+brew_compose_verbose=false
+
+function bc-main() {
+  local commands=()
+
+  for i in "$@"; do
+    case $i in
+      -c=*|--conf=*)
+        brew_compose_config="${i#*=}"
+      ;;
+      -v|--verbose)
+        brew_compose_verbose=true
+      ;;
+      -h|--help)
+        bc-help
+        return
+      ;;
+      -*)
+        # unknown option
+      ;;
+      *)
+        commands+=("$i")
+      ;;
+    esac
+  done
+
+  if [ "$brew_compose_verbose" = true ]; then
+    echo "v:CONFIG   = ${brew_compose_config}"
+    echo "v:COMMANDS = ${commands[@]}"
+  fi
+
+  if [ ! -f "${brew_compose_config}" ]; then
+    echo "${brew_compose_config} does not exist"
+    return 1
+  fi
+
+  cmd="${commands[0]}"
+  commands=("${commands[@]:1}")
+  case $cmd in
+    list|lis|li|l)
+      bc-list "${commands[@]}"
+    ;;
+    install|instal|insta|inst|ins|in|i)
+      bc-install "${commands[@]}"
+    ;;
+    *)
+    echo "${cmd} is not a valid command."
+    return 127
+    ;;
+  esac
+}
+
+function bc-help() {
+  echo "Usage: brew-compose [-c=..|-v|-h] [list|install]"
+  echo "  -c, --conf=[path]: specifies config file path, default is ~/.brew-compose"
+  echo "  -v, --verbose:     prints verbose debugging information"
+  echo "  -h, --help:        prints this help"
+  echo "Commands:            "
+  echo "  list:              list all brew formulaes in config"
+  echo "  install:           install formulaes according to config"
+}
+
+function bc-list() {
+  cat $brew_compose_config
+}
+
+function bc-install() {
+  brew install $(cat $brew_compose_config)
+}
+
+bc-main "$@"
