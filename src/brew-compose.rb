@@ -31,10 +31,13 @@ p file
 p verbose
 p commands
 
-if commands[0] == "list"
+case commands[0]
+when "list", "lis", "li", "l"
   output = YAML.load(File.read(File.expand_path(file)))
   p output['formulae'].keys.join(' ')
-elsif commands[0] == "install"
+when "install", "instal", "insta", "inst", "ins", "in", "i"
   output = YAML.load(File.read(File.expand_path(file)))
   p %x[ brew install #{output['formulae'].keys.join(' ')} ]
+else
+  p "#{commands[0]} is not a recogized command"
 end
