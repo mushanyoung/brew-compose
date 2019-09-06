@@ -24,7 +24,7 @@ if [ -z $RUBY_EXE ]; then
   return
 fi
 
-cat "$0" | sed -n '/^#\([^!]\|$\)/p' | cut -c2- > "$BREW_COMPOSE_GENERATED"
+cat "$0" | sed -E -n '/^#([^!]|$)/p' | cut -c2- > "$BREW_COMPOSE_GENERATED"
 
 exec "$RUBY_EXE" "$BREW_COMPOSE_GENERATED" "$@"
 
