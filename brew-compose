@@ -26,6 +26,7 @@ verbose = options[:verbose] || false
 file    = options[:file] || "~/.brew-compose.yml"
 commands = ARGV
 
+p RUBY_VERSION
 p file
 p verbose
 p commands
