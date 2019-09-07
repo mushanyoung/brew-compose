@@ -5,11 +5,16 @@ BREW_COMPOSE_GENERATED='/tmp/brew-compose.rb'
 if command -v ruby >/dev/null && ruby -e 'exit RUBY_VERSION.split(".").first(2).join(".").to_f >= 2.3'; then
   RUBY_EXE=ruby
 else
-  brew_path=$(command -v brew)
+  brew_path="$(command -v brew)"
   if [ $? = 0 ]; then
-    portable_ruby="$(dirname $(dirname $brew_path))/Homebrew/Library/Homebrew/vendor/portable-ruby/current/bin/ruby"
+    portable_ruby="$(dirname $(dirname "$brew_path"))/Homebrew/Library/Homebrew/vendor/portable-ruby/current/bin/ruby"
     if [ -f $poratable_ruby ]; then
       RUBY_EXE="$portable_ruby"
+    else
+      portable_ruby="$(dirname $(dirname "$brew_path"))/Library/Homebrew/vendor/portable-ruby/current/bin/ruby"
+      if [ -f $poratable_ruby ]; then
+        RUBY_EXE="$portable_ruby"
+      fi
     fi
   fi
 fi
