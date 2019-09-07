@@ -1,7 +1,7 @@
 #!/bin/sh
+# vim: set filetype=ruby:
 
 RUBY_EXE=''
-BREW_COMPOSE_GENERATED='/tmp/brew-compose.rb'
 if command -v ruby >/dev/null && ruby -e 'exit RUBY_VERSION.split(".").first(2).join(".").to_f >= 2.3'; then
   RUBY_EXE=ruby
 else
@@ -20,59 +20,59 @@ else
 fi
 
 if [ -z $RUBY_EXE ]; then
-  if [ $(uname) = Linux ]; then
-    brew_website="Linuxbrew at https://linuxbrew.sh"
-  else
-    brew_website="Homebrew at https://brew.sh"
-  fi
+  brew_website="Homebrew at https://brew.sh"
+  [ $(uname) = Linux ] && brew_website="Linuxbrew at https://linuxbrew.sh"
   echo >&2 "Could not find ruby (version >= 2.3) executable.\nPlease install $brew_website first."
-  return
+  exit
 fi
 
-cat "$0" | sed -E -n '/^#([^!]|$)/p' | cut -c2- > "$BREW_COMPOSE_GENERATED"
+exec "$RUBY_EXE" -x "$0" "$@"
 
-exec "$RUBY_EXE" "$BREW_COMPOSE_GENERATED" "$@"
+#!/usr/bin/env ruby
 
-##!/usr/bin/env ruby
-#
-#require 'optparse'
-#require 'yaml'
-#
-#options = {}
-#OptionParser.new do |opts|
-#  opts.banner = "Usage: brew-compose [-f <arg>...] [options] [COMMAND]
-#
-#Commands:
-#    list                             list all brew formulae in compose file
-#    install                          install formulaes according to compose file
-#
-#Options:
-#    -h, --help                       print this help"
-#
-#  opts.on("-f", "--file FILE", "specify an alternate compose file (default: ~/.brew-compose.yml)") do |v|
-#    options[:file] = v
-#  end
-#  opts.on("-v", "--verbose", "print verbose debugging information") do |v|
-#    options[:verbose] = v
-#  end
-#end.parse!
-#
-#verbose = options[:verbose] || false
-#file    = options[:file] || "~/.brew-compose.yml"
-#commands = ARGV
-#
-#p RUBY_VERSION
-#p file
-#p verbose
-#p commands
-#
-#case commands[0]
-#when "list", "lis", "li", "l"
-#  output = YAML.load(File.read(File.expand_path(file)))
-#  p output['formulae'].keys.join(' ')
-#when "install", "instal", "insta", "inst", "ins", "in", "i"
-#  output = YAML.load(File.read(File.expand_path(file)))
-#  p %x[ brew install #{output['formulae'].keys.join(' ')} ]
-#else
-#  p "#{commands[0]} is not a recogized command"
-#end
+require 'optparse'
+require 'yaml'
+
+options = {}
+OptionParser.new do |opts|
+  opts.banner =
+    'Usage: brew-compose [-f <arg>...] [options] [COMMAND]
+
+Commands:
+    list                             list all brew formulae in compose file
+    install                          install formulaes according to compose file
+
+Options:
+    -h, --help                       print this help'
+
+  opts.on(
+    '-f',
+    '--file FILE',
+    'specify an alternate compose file (default: ~/.brew-compose.yml)'
+  ) { |v| options[:file] = v }
+  opts.on(
+    '-v',
+    '--verbose',
+    'print verbose debugging information to console'
+  ) { |v| options[:verbose] = v }
+end.parse!
+
+verbose = options[:verbose] || false
+file = options[:file] || '~/.brew-compose.yml'
+commands = ARGV
+
+p RUBY_VERSION
+p file
+p verbose
+p commands
+
+case commands[0]
+when 'list', 'lis', 'li', 'l'
+  output = YAML.load(File.read(File.expand_path(file)))
+  p output['formulae'].keys.join(' ')
+when 'install', 'instal', 'insta', 'inst', 'ins', 'in', 'i'
+  output = YAML.load(File.read(File.expand_path(file)))
+  p `brew install #{output['formulae'].keys.join(' ')}`
+else
+  p "#{commands[0]} is not a recogized command"
+end
