@@ -1,9 +1,0 @@
-formulae:
-  vim:
-    build-source: true
-  tmux:
-  fselect:
-  git:
-  lua:
-  tldr:
-

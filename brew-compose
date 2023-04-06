@@ -1,78 +1,135 @@
-#!/bin/sh
-# vim: set filetype=ruby:
+#!/usr/bin/env python3
 
-RUBY_EXE=''
-if command -v ruby >/dev/null && ruby -e 'exit RUBY_VERSION.split(".").first(2).join(".").to_f >= 2.3'; then
-  RUBY_EXE=ruby
-else
-  brew_path="$(command -v brew)"
-  if [ $? = 0 ]; then
-    portable_ruby="$(dirname $(dirname "$brew_path"))/Homebrew/Library/Homebrew/vendor/portable-ruby/current/bin/ruby"
-    if [ -f $poratable_ruby ]; then
-      RUBY_EXE="$portable_ruby"
-    else
-      portable_ruby="$(dirname $(dirname "$brew_path"))/Library/Homebrew/vendor/portable-ruby/current/bin/ruby"
-      if [ -f $poratable_ruby ]; then
-        RUBY_EXE="$portable_ruby"
-      fi
-    fi
-  fi
-fi
+import sys
+import os
+import argparse
+import subprocess
+import shutil
 
-if [ -z $RUBY_EXE ]; then
-  brew_website="Homebrew at https://brew.sh"
-  [ $(uname) = Linux ] && brew_website="Linuxbrew at https://linuxbrew.sh"
-  echo >&2 "Could not find ruby (version >= 2.3) executable.\nPlease install $brew_website first."
-  exit
-fi
+def parse_args():
+    parser = argparse.ArgumentParser(description="Manage Homebrew packages using a configuration file")
+    parser.add_argument("-f", "--config-file", default=os.path.expanduser("~/brew-compose.config"),
+                        help="Path to the configuration file (default: ~/brew-compose.config)")
+    parser.add_argument("-p", "--brew-path", default="brew",
+                        help="Path to the Homebrew command-line executable (default: 'brew')")
+    subparsers = parser.add_subparsers(dest="subcommand", help="Subcommand to execute (default: list)")
+    subparsers.default = "list"
+    list_parser = subparsers.add_parser("list", help="List all installed packages, grouped by their status (tracked, dependency, or not tracked)")
+    install_parser = subparsers.add_parser("install", help="Install tracked packages that are not installed")
+    prune_parser = subparsers.add_parser("prune", help="Remove packages that are not tracked by the configuration file and not a dependency of a tracked package")
 
-exec "$RUBY_EXE" -x "$0" "$@"
+    return parser.parse_args()
 
-#!/usr/bin/env ruby
+def colorize(text, color):
+    colors = {
+        "black": "\033[30m",
+        "red": "\033[31m",
+        "green": "\033[32m",
+        "yellow": "\033[33m",
+        "blue": "\033[34m",
+        "magenta": "\033[35m",
+        "cyan": "\033[36m",
+        "white": "\033[37m",
+        "reset": "\033[0m"
+    }
+    return colors[color] + text + colors["reset"]
 
-require 'optparse'
-require 'yaml'
+def get_installed_packages(brew_path):
+    output = subprocess.check_output([brew_path, "list", "--formula"])
+    return output.decode("utf-8").strip().split("\n")
 
-options = {}
-OptionParser.new do |opts|
-  opts.banner =
-    'Usage: brew-compose [-f <arg>...] [options] [COMMAND]
+def get_dependencies(packages, brew_path):
+    result = subprocess.run([brew_path, "deps", "--installed", "--for-each"] + packages, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(colorize(f"Error: Failed to get dependencies for tracked packages.", "red"))
+        print(result.stderr)
+        return []
+    else:
+        nested_dependencies = [line.strip().split(": ")[1].split() if len(line.strip().split(": ")) > 1 else [] for line in result.stdout.strip().split("\n")]
+        return sum(nested_dependencies, [])
 
-Commands:
-    list                             list all brew formulae in compose file
-    install                          install formulaes according to compose file
+def print_grouped_packages(packages, status, color, max_columns):
+    if packages:
+        print(f"=========={status}==========")
+        column_width = max(len(package) for package in packages) + 2
+        screen_width = shutil.get_terminal_size().columns
+        num_columns = min(max_columns, screen_width // column_width)
 
-Options:
-    -h, --help                       print this help'
+        for i, package in enumerate(packages):
+            if i % num_columns == num_columns - 1:
+                print(colorize(package.ljust(column_width), color))
+            else:
+                print(colorize(package.ljust(column_width), color), end="")
+        # Add a line feed if the last package did not already have one
+        if (len(packages) - 1) % num_columns != num_columns - 1:
+            print()
+        print()
 
-  opts.on(
-    '-f',
-    '--file FILE',
-    'specify an alternate compose file (default: ~/.brew-compose.yml)'
-  ) { |v| options[:file] = v }
-  opts.on(
-    '-v',
-    '--verbose',
-    'print verbose debugging information to console'
-  ) { |v| options[:verbose] = v }
-end.parse!
+def list_packages(config_packages, brew_path, max_columns=4):
+    installed_packages = get_installed_packages(brew_path)
+    tracked_dependencies = get_dependencies(config_packages, brew_path)
 
-verbose = options[:verbose] || false
-file = options[:file] || '~/.brew-compose.yml'
-commands = ARGV
+    tracked_but_not_installed = []
+    tracked = []
+    dependencies = []
+    not_tracked = []
 
-p RUBY_VERSION
-p file
-p verbose
-p commands
+    for package in installed_packages:
+        if package in config_packages:
+            tracked.append(package)
+        elif package in tracked_dependencies:
+            dependencies.append(package)
+        else:
+            not_tracked.append(package)
 
-case commands[0]
-when 'list', 'lis', 'li', 'l'
-  output = YAML.load(File.read(File.expand_path(file)))
-  p output['formulae'].keys.join(' ')
-when 'install', 'instal', 'insta', 'inst', 'ins', 'in', 'i'
-  output = YAML.load(File.read(File.expand_path(file)))
-  p `brew install #{output['formulae'].keys.join(' ')}`
-else
-  p "#{commands[0]} is not a recogized command"
-end
+    for package in config_packages:
+        if package not in installed_packages:
+            tracked_but_not_installed.append(package)
+
+    print_grouped_packages(tracked_but_not_installed, "Tracked but not Installed", "blue", max_columns)
+    print_grouped_packages(tracked, "Tracked", "green", max_columns)
+    print_grouped_packages(dependencies, "Dependency of a Tracked Package", "yellow", max_columns)
+    print_grouped_packages(not_tracked, "Not Tracked", "red", max_columns)
+
+def install_packages(config_packages, brew_path):
+    installed_packages = get_installed_packages(brew_path)
+
+    for package in config_packages:
+        if package not in installed_packages:
+            print("Installing " + colorize(package, "blue") + " ...")
+            result = subprocess.run([brew_path, "install", package], capture_output=True, text=True)
+            if result.returncode != 0:
+                print(colorize(f"Error: Failed to install {package}.", "red"))
+                print(result.stderr)
+        else:
+            print(colorize(package, "green") + " is already installed.")
+
+def prune_packages(config_packages, brew_path):
+    installed_packages = get_installed_packages(brew_path)
+    tracked_dependencies = get_dependencies(config_packages, brew_path)
+
+    for package in installed_packages:
+        if package not in config_packages and package not in tracked_dependencies:
+            print(f"Removing {package}...")
+            subprocess.run([brew_path, "uninstall", "--ignore-dependencies", package])
+
+def main():
+    args = parse_args()
+
+    if not os.path.isfile(args.config_file):
+        print(f"Error: {args.config_file} not found\n")
+        parser.print_help()
+        sys.exit(1)
+
+    with open(args.config_file, "r") as f:
+        config_packages = [line.strip() for line in f if line.strip()]
+
+    if args.subcommand == "install":
+        install_packages(config_packages, args.brew_path)
+    elif args.subcommand == "prune":
+        prune_packages(config_packages, args.brew_path)
+    elif args.subcommand == "list":
+        list_packages(config_packages, args.brew_path)
+
+if __name__ == "__main__":
+    main()
