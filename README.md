@@ -1,8 +1,10 @@
 # brew-compose
 
 Manage Homebrew packages using a configuration file.
+
 Similar to docker-compose, but for Homebrew (or Linuxbrew).
 
+```
 usage: brew-compose [-h] [-f CONFIG_FILE] [-p BREW_PATH] {list,install,prune} ...
 
 positional arguments:
@@ -17,3 +19,4 @@ options:
                         Path to the configuration file (default: ~/brew-compose.config)
   -p BREW_PATH, --brew-path BREW_PATH
                         Path to the Homebrew command-line executable (default: 'brew')
+```
