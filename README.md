@@ -16,7 +16,7 @@ positional arguments:
 options:
   -h, --help            show this help message and exit
   -f CONFIG_FILE, --config-file CONFIG_FILE
-                        Path to the configuration file (default: ~/brew-compose.config)
+                        Path to the configuration file (default: ~/.brew-compose)
   -p BREW_PATH, --brew-path BREW_PATH
                         Path to the Homebrew command-line executable (default: 'brew')
 ```
