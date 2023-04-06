@@ -86,9 +86,9 @@ def list_packages(config_packages, brew_path, max_columns=4):
         if package not in installed_packages:
             tracked_but_not_installed.append(package)
 
-    print_grouped_packages(tracked_but_not_installed, "Tracked but not Installed", "blue", max_columns)
-    print_grouped_packages(tracked, "Tracked", "green", max_columns)
-    print_grouped_packages(dependencies, "Dependency of a Tracked Package", "yellow", max_columns)
+    print_grouped_packages(tracked_but_not_installed, "Tracked Packages not Installed", "blue", max_columns)
+    print_grouped_packages(tracked, "Tracked Packages", "green", max_columns)
+    print_grouped_packages(dependencies, "Dependencies of Tracked Packages", "yellow", max_columns)
     print_grouped_packages(not_tracked, "Not Tracked", "red", max_columns)
 
 def install_packages(config_packages, brew_path):
