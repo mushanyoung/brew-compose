@@ -4,16 +4,6 @@ brew-compose is a command-line utility that simplifies the management of Homebre
 
 With brew-compose, you can keep track of your preferred Homebrew packages in a single file and install or remove packages according to it.
 
-## Config File Format
-
-The configuration file for Brew Compose is a plain text file that lists your desired Homebrew packages, one per line. Each line should contain the name of a package without any additional information or whitespace. The default location for the configuration file is `~/.brew-compose`. Here is an example of a simple configuration file:
-
-
-```
-git
-wget
-fzf
-```
 ## Installation
 
 Brew Compose can be installed in multiple ways:
@@ -31,11 +21,21 @@ Run the following one-off command
 fundle install
 ```
 
-3. **Oh My Zsh Plugin**: Clone the Brew Compose repository into the custom plugins directory of Oh My Zsh and add it to your `plugins` list in your `.zshrc` file.
+3. **[Oh My Zsh](https://ohmyz.sh/) Plugin**: Clone the Brew Compose repository into the custom plugins directory of Oh My Zsh and add it to your `plugins` list in your `.zshrc` file.
+
+## Config File Format
+
+The configuration file for Brew Compose is a plain text file that lists your desired Homebrew packages, one per line. Each line should contain the name of a package without any additional information or whitespace. The default location for the configuration file is `~/.brew-compose`. Here is an example of a simple configuration file:
+
+```
+git
+wget
+fzf
+```
 
 ## Usage
 
-To get started, create a `.brew-compose` configuration file in your home directory and list your desired Homebrew packages, one per line. Then, use subcommands to manage your packages.
+Once the config file is ready, use subcommands to manage your packages.
 
 ```
 usage: brew-compose [-h] [-f CONFIG_FILE] [-p BREW_PATH] {list,install,prune} ...
