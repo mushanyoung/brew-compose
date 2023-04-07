@@ -1,8 +1,41 @@
 # brew-compose
 
-Manage Homebrew packages using a configuration file.
+brew-compose is a command-line utility that simplifies the management of Homebrew (Linuxbrew) packages using a configuration file, making it easier to maintain and share a consistent package setup across different machines. The concept comes from docker-compose.
 
-Similar to docker-compose, but for Homebrew (or Linuxbrew).
+With brew-compose, you can keep track of your preferred Homebrew packages in a single file and install or remove packages according to it.
+
+## Config File Format
+
+The configuration file for Brew Compose is a plain text file that lists your desired Homebrew packages, one per line. Each line should contain the name of a package without any additional information or whitespace. The default location for the configuration file is `~/.brew-compose`. Here is an example of a simple configuration file:
+
+
+```
+git
+wget
+fzf
+```
+## Installation
+
+Brew Compose can be installed in multiple ways:
+
+1. **Standalone Binary**: You can install Brew Compose as a standalone script. Simply clone the repository and add the script to your system's `PATH` or create a symlink to it from a directory in your `PATH`. You can then use the Brew Compose utility as a command-line tool.
+
+2. **[Fundle](https://github.com/danhper/fundle) Plugin**: Add this to your config.fish.
+```
+fundle plugin mushanyoung/brew-compose
+```
+
+Run the following one-off command
+
+```
+fundle install
+```
+
+3. **Oh My Zsh Plugin**: Clone the Brew Compose repository into the custom plugins directory of Oh My Zsh and add it to your `plugins` list in your `.zshrc` file.
+
+## Usage
+
+To get started, create a `.brew-compose` configuration file in your home directory and list your desired Homebrew packages, one per line. Then, use subcommands to manage your packages.
 
 ```
 usage: brew-compose [-h] [-f CONFIG_FILE] [-p BREW_PATH] {list,install,prune} ...
